@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOP 응대 스크립트</title>
+  <meta name="description" content="구글 스프레드시트 CSV 기반 SOP 응대 스크립트 페이지" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      background: #f6f7fb;
+      color: #111827;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .title-area h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .title-area p {
+      margin: 8px 0 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-box,
+    .select-box {
+      height: 44px;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      border-radius: 12px;
+      padding: 0 14px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-box {
+      min-width: 260px;
+    }
+
+    .select-box {
+      min-width: 180px;
+    }
+
+    .btn {
+      height: 44px;
+      border: none;
+      border-radius: 12px;
+      background: #111827;
+      color: #fff;
+      padding: 0 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      opacity: 0.92;
+    }
+
+    .status {
+      margin: 10px 0 18px;
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 4px 14px rgba(17, 24, 39, 0.04);
+    }
+
+    .summary-card .label {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .summary-card .value {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 6px 18px rgba(17, 24, 39, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .badge.gray {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .question {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.45;
+      letter-spacing: -0.02em;
+    }
+
+    .section {
+      border-top: 1px solid #f1f5f9;
+      padding-top: 12px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .content {
+      white-space: pre-wrap;
+      line-height: 1.7;
+      font-size: 15px;
+      color: #111827;
+    }
+
+    .empty,
+    .error {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      border: 1px solid #e5e7eb;
+      color: #6b7280;
+    }
+
+    .error {
+      color: #b91c1c;
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+
+    .footer-note {
+      margin-top: 24px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 900px) {
+      .summary,
+      .list {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        width: 100%;
+      }
+
+      .search-box,
+      .select-box,
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title-area">
+        <h1>SOP 응대 스크립트</h1>
+        <p>구글 스프레드시트에서 문구를 수정하면 이 페이지에 반영되는 구조</p>
+      </div>
+
+      <div class="controls">
+        <input
+          type="text"
+          id="searchInput"
+          class="search-box"
+          placeholder="질문, 상황, 키워드 검색"
+        />
+        <select id="categoryFilter" class="select-box">
+          <option value="전체">전체 카테고리</option>
+        </select>
+        <button id="resetBtn" class="btn">초기화</button>
+      </div>
+    </div>
+
+    <div class="status" id="statusText">데이터를 불러오는 중입니다...</div>
+
+    <div class="summary">
+      <div class="summary-card">
+        <div class="label">전체 스크립트</div>
+        <div class="value" id="totalCount">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">현재 표시</div>
+        <div class="value" id="visibleCount">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">카테고리 수</div>
+        <div class="value" id="categoryCount">0</div>
+      </div>
+    </div>
+
+    <div id="app"></div>
+
+    <div class="footer-note">
+      시트 컬럼 구조 예시: 카테고리, 상황, 고객질문, 응대스크립트, 주의사항, 키워드
+    </div>
+  </div>
+
+  <script>
+    /*
+      나중에 여기에 구글 스프레드시트 CSV 공개 링크를 넣으면 됨.
+      예:
+      const CSV_URL = "https://docs.google.com/spreadsheets/d/문서ID/export?format=csv&gid=0";
+    */
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTuqylvd0auZKM5Gd0ciQYAhgmZEGznhv7MSiVzLmIBFqpbErsushF48mqPVozpUwE_HUr9Nn3QT63l/pub?output=csv";
+
+    const app = document.getElementById("app");
+    const statusText = document.getElementById("statusText");
+    const searchInput = document.getElementById("searchInput");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const totalCountEl = document.getElementById("totalCount");
+    const visibleCountEl = document.getElementById("visibleCount");
+    const categoryCountEl = document.getElementById("categoryCount");
+
+    let rawData = [];
+    let filteredData = [];
+
+    function escapeHtml(str = "") {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeRowKeys(row) {
+      return {
+        category: row["카테고리"] || row["category"] || row["분류"] || "",
+        situation: row["상황"] || row["situation"] || "",
+        question: row["고객질문"] || row["질문"] || row["question"] || "",
+        script: row["응대스크립트"] || row["스크립트"] || row["script"] || "",
+        caution: row["주의사항"] || row["주의"] || row["caution"] || "",
+        keyword: row["키워드"] || row["keyword"] || ""
+      };
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let current = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === "," && !inQuotes) {
+          row.push(current);
+          current = "";
+        } else if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && nextChar === "\n") i++;
+          row.push(current);
+          current = "";
+
+          if (row.some(cell => cell.trim() !== "")) {
+            rows.push(row);
+          }
+          row = [];
+        } else {
+          current += char;
+        }
+      }
+
+      if (current.length > 0 || row.length > 0) {
+        row.push(current);
+        rows.push(row);
+      }
+
+      if (rows.length === 0) return [];
+
+      const headers = rows[0].map(h => h.trim());
+      return rows.slice(1).map(cols => {
+        const obj = {};
+        headers.forEach((header, index) => {
+          obj[header] = (cols[index] || "").trim();
+        });
+        return normalizeRowKeys(obj);
+      });
+    }
+
+    function getUniqueCategories(data) {
+      return [...new Set(data.map(item => item.category).filter(Boolean))];
+    }
+
+    function renderCategoryOptions(data) {
+      const categories = getUniqueCategories(data);
+      categoryFilter.innerHTML = `<option value="전체">전체 카테고리</option>`;
+
+      categories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+      });
+
+      categoryCountEl.textContent = categories.length;
+    }
+
+    function createCard(item) {
+      return `
+        <article class="card">
+          <div class="card-header">
+            <div class="badge-group">
+              ${item.category ? `<span class="badge">${escapeHtml(item.category)}</span>` : ""}
+              ${item.situation ? `<span class="badge gray">${escapeHtml(item.situation)}</span>` : ""}
+            </div>
+          </div>
+
+          <div class="question">
+            ${escapeHtml(item.question || "질문이 입력되지 않았습니다.")}
+          </div>
+
+          <div class="section">
+            <div class="section-title">응대 스크립트</div>
+            <div class="content">${escapeHtml(item.script || "-")}</div>
+          </div>
+
+          ${item.caution ? `
+            <div class="section">
+              <div class="section-title">주의사항</div>
+              <div class="content">${escapeHtml(item.caution)}</div>
+            </div>
+          ` : ""}
+
+          ${item.keyword ? `
+            <div class="section">
+              <div class="section-title">키워드</div>
+              <div class="content">${escapeHtml(item.keyword)}</div>
+            </div>
+          ` : ""}
+        </article>
+      `;
+    }
+
+    function renderList(data) {
+      if (!data.length) {
+        app.innerHTML = `<div class="empty">조건에 맞는 스크립트가 없습니다.</div>`;
+        visibleCountEl.textContent = 0;
+        return;
+      }
+
+      app.innerHTML = `<div class="list">${data.map(createCard).join("")}</div>`;
+      visibleCountEl.textContent = data.length;
+    }
+
+    function applyFilter() {
+      const keyword = searchInput.value.trim().toLowerCase();
+      const category = categoryFilter.value;
+
+      filteredData = rawData.filter(item => {
+        const matchCategory = category === "전체" || item.category === category;
+
+        const mergedText = [
+          item.category,
+          item.situation,
+          item.question,
+          item.script,
+          item.caution,
+          item.keyword
+        ].join(" ").toLowerCase();
+
+        const matchKeyword = !keyword || mergedText.includes(keyword);
+
+        return matchCategory && matchKeyword;
+      });
+
+      renderList(filteredData);
+      statusText.textContent = `총 ${rawData.length}건 중 ${filteredData.length}건 표시 중`;
+    }
+
+    async function loadCSVData() {
+      if (!CSV_URL) {
+        statusText.textContent = "현재 CSV 링크가 비어 있습니다. 코드 상단의 CSV_URL에 링크를 넣어주세요.";
+        app.innerHTML = `
+          <div class="empty">
+            CSV 링크 연결 전 기본 틀만 준비된 상태입니다.<br><br>
+            시트 컬럼 예시:<br>
+            카테고리 / 상황 / 고객질문 / 응대스크립트 / 주의사항 / 키워드
+          </div>
+        `;
+        totalCountEl.textContent = 0;
+        visibleCountEl.textContent = 0;
+        categoryCountEl.textContent = 0;
+        return;
+      }
+
+      try {
+        statusText.textContent = "데이터를 불러오는 중입니다...";
+
+        const response = await fetch(CSV_URL, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`불러오기 실패: ${response.status}`);
+        }
+
+        const csvText = await response.text();
+        const parsed = parseCSV(csvText).filter(item => {
+          return item.question || item.script;
+        });
+
+        rawData = parsed;
+
+        totalCountEl.textContent = rawData.length;
+        renderCategoryOptions(rawData);
+        applyFilter();
+
+        statusText.textContent = `데이터 로드 완료 · 총 ${rawData.length}건`;
+      } catch (error) {
+        console.error(error);
+        statusText.textContent = "데이터를 불러오지 못했습니다.";
+        app.innerHTML = `
+          <div class="error">
+            CSV 데이터를 불러오는 중 오류가 발생했습니다.<br>
+            링크 공개 상태, CSV 주소 형식, CORS 가능 여부를 확인하세요.
+          </div>
+        `;
+      }
+    }
+
+    searchInput.addEventListener("input", applyFilter);
+    categoryFilter.addEventListener("change", applyFilter);
+
+    resetBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      categoryFilter.value = "전체";
+      applyFilter();
+    });
+
+    loadCSVData();
+  </script>
+</body>
+</html>
